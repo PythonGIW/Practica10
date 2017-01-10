@@ -3,12 +3,14 @@
 #
 # CABECERA AQUI
 #
+import hashlib, random
 
 
-from bottle import run, post
 # Resto de importaciones
+from bottle import route, request, response, run, template, error, post
+from random import choice
 
-
+PIMIENTA = 'Juanito'
 ##############
 # APARTADO 1 #
 ##############
@@ -21,8 +23,36 @@ from bottle import run, post
 
 @post('/signup')
 def signup():
-    pass
+    nickname= request.forms.get('nickname')
+    name= request.forms.get('name')
+    country= request.forms.get('country')
+    email= request.forms.get('email')
+    password= request.forms.get('password')
+    password2= request.forms.get('password2')
+
+    if (password != password2):
+    #mostrar que "Las contraseñas no coinciden"
+
+    #Guardar las contraseñas con has sha256 
+    password = hashlib.sha256(password)
+    #Añadir la sal y volver a aplicar has sha256 
+    sal = dameSal(len(password))
+    password= hashlib.sha256(password + sal)
+    #Concatenar la pimienta y volver a hacer sha256
+    password= password + PIMIENTA
+    hashlib.sha256(password)
+
     
+
+
+
+def dameSal(int longitud):
+    valores = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ<=>@#%&+"
+
+    p = ""
+    p = p.join([choice(valores) for i in range(longitud)])
+    return p;
+        
 
 @post('/change_password')
 def change_password():
