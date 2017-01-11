@@ -2,11 +2,30 @@
 
 #
 # CABECERA AQUI
-#
 
+"""
+Autores: 
+Alberto Marquez
+Álvaro Asenjo
+Juan Jose Montiel 
+Declaramos que esta solución
+es fruto exclusivamente de nuestro trabajo personal. No hemos sido
+ayudados por ninguna otra persona ni hemos obtenido la solución de
+fuentes externas, y tampoco hemos compartido nuestra solución con
+nadie. Declaramos además que no hemos realizado de manera desho-
+nesta ninguna otra actividad que pueda mejorar nuestros resultados
+ni perjudicar los resultados de los demás.
+
+"""
+
+# Resto de importaciones
 
 from bottle import run, post
-# Resto de importaciones
+from pymongo import MongoClient
+
+mongoclient = MongoClient()
+db = mongoclient['giw']
+c = db['users']
 
 
 ##############
@@ -17,7 +36,6 @@ from bottle import run, post
 # Explicación detallada del mecanismo escogido para el almacenamiento de c
 # contraseñas, explicando razonadamente por qué es seguro
 #
-
 
 @post('/signup')
 def signup():
@@ -71,3 +89,12 @@ def login_totp():
 if __name__ == "__main__":
     # NO MODIFICAR LOS PARÁMETROS DE run()
     run(host='localhost',port=8080,debug=True)
+
+
+"""
+Ejemplo para hacer insert y update en pymongo
+
+db.users.insert_one({"_id": _id, "name": name, "country":country, "email":email, "password":new_pass, "password2":passw2, "salt":salt})
+db.users.update_one({"_id":_id}, {"$set":{"password": new_pass, "password2":new_pass}
+
+"""
