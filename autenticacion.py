@@ -3,7 +3,7 @@
 #
 # CABECERA AQUI
 
-import hashlib, random
+import hashlib, random, binascii
 
 """
 Autores: 
@@ -32,6 +32,10 @@ mongoclient = MongoClient()
 db = mongoclient['giw']
 c = db['users']
 
+
+@route('/')
+def index():
+    return template('change_password.tpl')
 ##############
 # APARTADO 1 #
 ##############
@@ -39,7 +43,11 @@ c = db['users']
 # 
 # Explicación detallada del mecanismo escogido para el almacenamiento de c
 # contraseñas, explicando razonadamente por qué es seguro
-#
+
+"""Consideramos que es seguro el almacenamiento debido a que las contraseñas no se almacenan directamente en la base de datos,
+    Primero las pasamos por el algoritmo sha256 despues las mezclamos con una sal generada aleatoriamente y la volvemos 
+    a pasar el sha256, finale mente escogemos una palabra clave para volver a mezclarla con la contraseña y de nuevo volver a
+    pasar el sha256."""
 
 @post('/signup')
 def signup():
@@ -51,26 +59,23 @@ def signup():
     password2= request.forms.get('password2')
 
     if (password != password2):
-    #print('Las contraseñas no coinciden')
+        print('Las contraseñas no coinciden')
     if (db.users.find_one({"nickname": nickname})):
-    #print('El alias de usuario ya existe')
+        print('El alias de usuario ya existe')
 
     #Guardar las contraseñas con has sha256 
-    password = hashlib.sha256(password)
-    #Añadir la sal y volver a aplicar has sha256 
-    sal = dameSal(len(password))
-    password= hashlib.sha256(password + sal)
-    #Concatenar la pimienta y volver a hacer sha256
-    password= password + PIMIENTA
-    password = hashlib.sha256(password)
-    db.users.insert_one({"nickname": nickname, "name": name, "country":country, "email":email, "password":password, "salt":sal})
-    #print ('Bienvenido usuario ' + name)
+    #Añadir la sal y volver a aplicar has sha256
+    print password.hexdigest()
+    sal = dameSal(18)
+    password= combinar(password, sal)
+    db.users.insert_one({"nickname": nickname, "name": name, "country":country, "email":email, "password":password.hexdigest(), "salt":sal})
+    print 'Bienvenido usuario ', name
 
     
 
 
 
-def dameSal(int longitud):
+def dameSal( longitud):
     valores = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ<=>@#%&+"
 
     p = ""
@@ -83,24 +88,44 @@ def change_password():
     nickname= request.forms.get('nickname')
     old_password= request.forms.get('old_password')
     new_password= request.forms.get('new_password')
-    user = db.users.find_one({"nickname": nickname, "password":old_password, "salt":sal})
+    user = db.users.find_one({"nickname": nickname})
     if (user != None):
-        oldPassword= hashlib.sha256(oldPassword + sal)
-        if()
+        sal = user["salt"]
+        dbpassword= user["password"]
+        shassword= combinar(old_password, sal)
+        if(shassword.hexdigest() == dbpassword):           
+            new_password= combinar(new_password, sal)
+            db.users.update_one({"nickname": nickname}, {"$set":{"password": new_password.hexdigest(), "password2":new_password.hexdigest()}})
+        else:
+            print "Usuario o contraseña incorrectos(==)"
+    else:
+        print "Usuario o contraseña incorrectos"
+
 
             
+def combinar(password, sal):
+    password = hashlib.sha256(password)
+    password= hashlib.sha256(password.hexdigest() + sal)
+    #Concatenar la pimienta y volver a hacer sha256
+    password= password.hexdigest() + PIMIENTA
+    return hashlib.sha256(password)
+
 
 @post('/login')
 def login():
     nickname= request.forms.get('nickname')
     password= request.forms.get('password')
-    user = db.users.find_one({"nickname": nickname, "name": name, "password":password, "salt":sal})
+    user = db.users.find_one({"nickname": nickname})
     if(user != None):
         sal = user["salt"]
-        dbpassword = user["password"]
-        shassword= hashlib.sha256(oldPassword + sal)
-        if(shassword == dbpassword)
-            print "Bienvenido" + user["name"]
+        dbpassword= user["password"]
+        shassword= combinar(password, sal)
+        print dbpassword
+        print shassword
+        if(shassword.hexdigest() == dbpassword):
+            print "Bienvenido: " + user["name"]
+        else: 
+            print "Usuario o contraseña incorrectos(==)"
     else: 
         print "Usuario o contraseña incorrectos"
 
