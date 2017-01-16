@@ -53,14 +53,14 @@ def signup():
     password2= request.forms.get('password2')
 
     if (password != password2):
-        return 'Las contraseñas no coinciden'
+        return template("error_pass.tpl", username = nickname)
     if (db.users.find_one({"nickname": nickname})):
-        return 'El alias de usuario ya existe'
+        return template("error_user.tpl", username = nickname)
 
     sal = dameSal(18)
     password= combinar(password, sal)
     db.users.insert_one({"nickname": nickname, "name": name, "country":country, "email":email, "password":password.hexdigest(), "salt":sal})
-    return 'Bienvenido ', name
+    return template("bienvenida_login.tpl", username = name)
 
     
 def dameSal( longitud):
@@ -84,9 +84,9 @@ def change_password():
             new_password= combinar(new_password, sal)
             db.users.update_one({"nickname": nickname}, {"$set":{"password": new_password.hexdigest(), "password2":new_password.hexdigest()}})
         else:
-            return "Usuario o contraseña incorrectos(==)"
+            return template("error_login.tpl")
     else:
-        return "Usuario o contraseña incorrectos"
+        return template("error_login.tpl")
 
     
 def combinar(password, sal):
@@ -106,11 +106,11 @@ def login():
         dbpassword= user["password"]
         shassword= combinar(password, sal)
         if(shassword.hexdigest() == dbpassword):
-            return "Bienvenido: " + user["name"]
+            return template("bienvenida_login.tpl", username = user["name"])
         else: 
-            return "Usuario o contraseña incorrectos(==)"
+            return template("error_login.tpl")
     else: 
-        return "Usuario o contraseña incorrectos"
+        return template("error_login.tpl")
 
 
 
@@ -150,9 +150,9 @@ def signup_totp():
     password2= request.forms.get('password2')
 
     if (password != password2):
-        return "Las contraseñas no coinciden"
+        return template("error_pass.tpl", username = nickname)
     if (db.users.find_one({"nickname": nickname})):       
-        return "Ya existe un usuario con el nick " + nickname
+        return template("error_user.tpl", username = nickname)
 
     sal = dameSal(18)
     password= combinar(password, sal)
@@ -176,11 +176,11 @@ def login_totp():
         if(shassword.hexdigest() == dbpassword):
             totp2 = otp.get_totp(user['semilla'], as_string=True)
             if(totp == totp2):
-                return "Bienvenido "+ user["name"]
+                return template("bienvenida_login.tpl", username = user['nickname'])
         else: 
-            return "Usuario o contraseña incorrectos"
+            return template("error_login.tpl")
     else: 
-        return "Usuario o contraseña incorrectos"
+        return template("error_login.tpl")
 
 
     
