@@ -63,9 +63,6 @@ def signup():
     return 'Bienvenido ', name
 
     
-
-
-
 def dameSal( longitud):
     valores = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ<=>@#%&+"
     p = ""
@@ -91,8 +88,7 @@ def change_password():
     else:
         return "Usuario o contraseña incorrectos"
 
-
-            
+    
 def combinar(password, sal):
     password = hashlib.sha256(password)
     password= hashlib.sha256(password.hexdigest() + sal)
@@ -115,8 +111,6 @@ def login():
             return "Usuario o contraseña incorrectos(==)"
     else: 
         return "Usuario o contraseña incorrectos"
-
-
 
 
 
@@ -156,9 +150,9 @@ def signup_totp():
     password2= request.forms.get('password2')
 
     if (password != password2):
-        return template("error_totp.tpl", username = nickname) 
-    if (db.users.find_one({"nickname": nickname})):
-        return template("error_user_totp.tpl", username = nickname)
+        return "Las contraseñas no coinciden"
+    if (db.users.find_one({"nickname": nickname})):       
+        return "Ya existe un usuario con el nick " + nickname
 
     sal = dameSal(18)
     password= combinar(password, sal)
