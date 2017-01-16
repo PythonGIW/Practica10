@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
 #
-# CABECERA AQUI
-
-import hashlib, random, binascii
-
 """
 Autores: 
 Alberto Marquez
@@ -20,6 +16,7 @@ ni perjudicar los resultados de los demás.
 
 """
 
+import hashlib, random, binascii
 # Resto de importaciones
 from bottle import route, request, response, run, template, error, post
 from random import choice
@@ -33,11 +30,6 @@ mongoclient = MongoClient()
 db = mongoclient['giw']
 c = db['users']
 
-"""
-@route('/')
-def index():
-    return template('change_password.tpl')
-"""
 ##############
 # APARTADO 1 #
 ##############
@@ -61,17 +53,14 @@ def signup():
     password2= request.forms.get('password2')
 
     if (password != password2):
-        print 'Las contraseñas no coinciden'
+        return 'Las contraseñas no coinciden'
     if (db.users.find_one({"nickname": nickname})):
-        print 'El alias de usuario ya existe'
+        return 'El alias de usuario ya existe'
 
-    #Guardar las contraseñas con has sha256 
-    #Añadir la sal y volver a aplicar has sha256
-    print password.hexdigest()
     sal = dameSal(18)
     password= combinar(password, sal)
     db.users.insert_one({"nickname": nickname, "name": name, "country":country, "email":email, "password":password.hexdigest(), "salt":sal})
-    print 'Bienvenido usuario ', name
+    return 'Bienvenido ', name
 
     
 
@@ -79,7 +68,6 @@ def signup():
 
 def dameSal( longitud):
     valores = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ<=>@#%&+"
-
     p = ""
     p = p.join([choice(valores) for i in range(longitud)])
     return p;
@@ -99,16 +87,15 @@ def change_password():
             new_password= combinar(new_password, sal)
             db.users.update_one({"nickname": nickname}, {"$set":{"password": new_password.hexdigest(), "password2":new_password.hexdigest()}})
         else:
-            print "Usuario o contraseña incorrectos(==)"
+            return "Usuario o contraseña incorrectos(==)"
     else:
-        print "Usuario o contraseña incorrectos"
+        return "Usuario o contraseña incorrectos"
 
 
             
 def combinar(password, sal):
     password = hashlib.sha256(password)
     password= hashlib.sha256(password.hexdigest() + sal)
-    #Concatenar la pimienta y volver a hacer sha256
     password= password.hexdigest() + PIMIENTA
     return hashlib.sha256(password)
 
@@ -122,14 +109,12 @@ def login():
         sal = user["salt"]
         dbpassword= user["password"]
         shassword= combinar(password, sal)
-        print dbpassword
-        print shassword
         if(shassword.hexdigest() == dbpassword):
-            print "Bienvenido: " + user["name"]
+            return "Bienvenido: " + user["name"]
         else: 
-            print "Usuario o contraseña incorrectos(==)"
+            return "Usuario o contraseña incorrectos(==)"
     else: 
-        print "Usuario o contraseña incorrectos"
+        return "Usuario o contraseña incorrectos"
 
 
 
@@ -171,22 +156,19 @@ def signup_totp():
     password2= request.forms.get('password2')
 
     if (password != password2):
-        return template("error_totp.tpl", username = nickname) #FALTAAAAAAAAAAAAAAA tpl
+        return template("error_totp.tpl", username = nickname) 
     if (db.users.find_one({"nickname": nickname})):
         return template("error_user_totp.tpl", username = nickname)
 
-    #Guardar las contraseñas con has sha256 
-    #Añadir la sal y volver a aplicar has sha256
     sal = dameSal(18)
     password= combinar(password, sal)
     semilla = gen_secret()
     db.users.insert_one({"nickname": nickname, "name": name, "country":country, "email":email, "password":password.hexdigest(), "salt":sal, "semilla":semilla})
     
-    #GENERAS LA SEMILLA Y LAS GUARDAS EN LA BASE DE DATOS (UPDATE)
     qr = gen_qrcode_url(gen_gauth_url("myProyect", nickname, semilla));
     return template("bienvenida_totp.tpl", username = nickname, semilla= semilla, qr = qr) 
         
-        
+
 @post('/login_totp')        
 def login_totp():
     nickname= request.forms.get('nickname')
@@ -198,26 +180,16 @@ def login_totp():
         dbpassword= user["password"]
         shassword= combinar(password, sal)
         if(shassword.hexdigest() == dbpassword):
-            totp2 = otp.get_totp(user['semilla'])
-            if(otp.valid_toptp(toptp,resul["secret"])):
+            totp2 = otp.get_totp(user['semilla'], as_string=True)
+            if(totp == totp2):
                 return "Bienvenido "+ user["name"]
-            print "Bienvenido: " + user["name"]
         else: 
-            print "Usuario o contraseña incorrectos"
+            return "Usuario o contraseña incorrectos"
     else: 
-        print "Usuario o contraseña incorrectos"
+        return "Usuario o contraseña incorrectos"
 
 
     
 if __name__ == "__main__":
     # NO MODIFICAR LOS PARÁMETROS DE run()
     run(host='localhost',port=8080,debug=True)
-
-
-"""
-Ejemplo para hacer insert y update en pymongo
-
-db.users.insert_one({"_id": _id, "name": name, "country":country, "email":email, "password":new_pass, "password2":passw2, "salt":salt})
-db.users.update_one({"_id":_id}, {"$set":{"password": new_pass, "password2":new_pass}
-
-"""
